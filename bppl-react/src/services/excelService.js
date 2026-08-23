@@ -41,6 +41,28 @@ export const logoutAdminSession = () => {
 
 // Normalize product columns from Excel
 export const normalizeProduct = (row, index) => {
+  // Already-normalized (saved by the Admin panel, or a previous normalize pass) — pass through as-is.
+  // Re-running the Excel column parser below on these fields corrupts unitPrice (looks for the
+  // column name "UNIT PRICE", not the field "unitPrice") and images (splits base64 data URIs on
+  // the ";" in "data:image/jpeg;base64,...").
+  if (Array.isArray(row.images) && typeof row.unitPrice === 'number') {
+    const images = row.images.length > 0 ? row.images : ['/products/mg2.jpeg'];
+    return {
+      id: row.id ?? (index + 1),
+      title: row.title || `Product #${row.id ?? index + 1}`,
+      description: row.description || row.title || '',
+      category: row.category || inferCategory(row.title || '', row.description || ''),
+      qty: row.qty || '',
+      unit: row.unit || 'Litre',
+      unitPrice: row.unitPrice,
+      images,
+      imagePath: row.imagePath || images[0],
+      activeIngredient: row.activeIngredient || row.description || '',
+      dosage: row.dosage || 'As recommended by agricultural specialist',
+      packaging: row.packaging || row.qty || 'Standard Commercial Pack'
+    };
+  }
+
   const getKey = (patterns) => {
     const keys = Object.keys(row);
     for (const pattern of patterns) {
