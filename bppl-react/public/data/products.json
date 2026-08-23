@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "id": 1,
+    "title": "Bispyriback Sodium",
+    "description": "Bispyriback Sodium -10% SC",
+    "category": "Herbicides",
+    "qty": "",
+    "unit": "Litre",
+    "unitPrice": 1052,
+    "activeIngredient": "",
+    "dosage": "",
+    "packaging": "",
+    "imagePath": "/products/mg2.jpeg",
+    "images": [
+      "/products/mg2.jpeg"
+    ],
+    "inStock": true
+  }
+]
