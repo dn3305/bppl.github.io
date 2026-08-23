@@ -176,6 +176,8 @@ export default function AdminModal({
       const finalImagePath = finalImages[0];
 
       let updatedList = [];
+      let mergedIntoExisting = false;
+
       if (editingId) {
         updatedList = products.map(p =>
           p.id === editingId
@@ -183,22 +185,44 @@ export default function AdminModal({
             : p
         );
       } else {
-        const nextId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
-        updatedList = [...products, {
-          id: nextId,
-          title: formData.title,
-          description: formData.description || formData.title,
-          category: formData.category,
-          qty: formData.qty,
-          unit: formData.unit,
-          unitPrice: parseFloat(formData.unitPrice) || 0,
-          activeIngredient: formData.activeIngredient,
-          dosage: formData.dosage,
-          packaging: formData.packaging,
-          imagePath: finalImagePath,
-          images: finalImages,
-          inStock: true
-        }];
+        // Catch accidental duplicates: saving a "new" product with a title that already
+        // exists usually means the user is trying to attach more images to that product
+        // (e.g. saved once per image) rather than create a second, separate item.
+        const duplicate = products.find(
+          p => p.title.trim().toLowerCase() === formData.title.trim().toLowerCase()
+        );
+
+        if (duplicate && window.confirm(
+          `A product named "${duplicate.title}" already exists (#${duplicate.id}).\n\n` +
+          `Add ${finalImages.length} image(s) to that existing product instead of creating a duplicate?\n\n` +
+          `Choose Cancel if this is genuinely a different product that just happens to share the name.`
+        )) {
+          const existingImages = duplicate.images || [];
+          const mergedImages = [...existingImages, ...finalImages.filter(img => !existingImages.includes(img))];
+          updatedList = products.map(p =>
+            p.id === duplicate.id
+              ? { ...p, images: mergedImages, imagePath: p.imagePath || mergedImages[0] }
+              : p
+          );
+          mergedIntoExisting = true;
+        } else {
+          const nextId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+          updatedList = [...products, {
+            id: nextId,
+            title: formData.title,
+            description: formData.description || formData.title,
+            category: formData.category,
+            qty: formData.qty,
+            unit: formData.unit,
+            unitPrice: parseFloat(formData.unitPrice) || 0,
+            activeIngredient: formData.activeIngredient,
+            dosage: formData.dosage,
+            packaging: formData.packaging,
+            imagePath: finalImagePath,
+            images: finalImages,
+            inStock: true
+          }];
+        }
       }
 
       // Save locally
@@ -206,12 +230,13 @@ export default function AdminModal({
       onProductsUpdated(updatedList);
 
       // Push products.json to GitHub
+      const savedText = mergedIntoExisting ? 'Images merged into existing product' : 'Product saved';
       if (hasGitHubToken()) {
         setStatusMsg({ type: 'info', text: 'Pushing catalog update to GitHub...' });
         await pushProductsToGitHub(updatedList);
-        setStatusMsg({ type: 'success', text: `✓ Product saved and pushed live! Your website will update in ~30 seconds.` });
+        setStatusMsg({ type: 'success', text: `✓ ${savedText} and pushed live! Your website will update in ~30 seconds.` });
       } else {
-        setStatusMsg({ type: 'success', text: `Product saved locally. Set up GitHub token in Settings tab to push live.` });
+        setStatusMsg({ type: 'success', text: `${savedText} locally. Set up GitHub token in Settings tab to push live.` });
       }
 
       // Reset form
