@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  ArrowLeft, 
-  CheckCircle2, 
-  Mail, 
-  MessageCircle, 
-  ChevronRight, 
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Mail,
+  MessageCircle,
+  ChevronRight,
   ChevronLeft,
   FlaskConical,
   Shield,
@@ -105,7 +105,7 @@ export default function ProductDetailPage({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 bg-white">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-xs text-slate-500 mb-8">
-        <button 
+        <button
           onClick={onBack}
           className="hover:text-blue-900 flex items-center gap-1 font-medium"
         >
@@ -119,13 +119,13 @@ export default function ProductDetailPage({
 
       {/* Main Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14">
-        
+
         {/* ─── Left: Image Gallery ────────────────────── */}
         <div className="lg:col-span-5 space-y-3">
           {/* Main Image Viewer */}
           <div className="relative rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center min-h-[340px] overflow-hidden group">
-            <img 
-              src={resolveImg(imageList[activeImgIdx])} 
+            <img
+              src={resolveImg(imageList[activeImgIdx])}
               alt={product.title}
               onError={(e) => { e.target.style.display = 'none'; }}
               className="max-h-80 w-full object-contain transition-all duration-300"
@@ -168,9 +168,8 @@ export default function ProductDetailPage({
                 <button
                   key={i}
                   onClick={() => setActiveImgIdx(i)}
-                  className={`w-14 h-14 rounded border-2 p-1 bg-white flex items-center justify-center transition-colors ${
-                    i === activeImgIdx ? 'border-blue-950' : 'border-slate-200 hover:border-slate-400'
-                  }`}
+                  className={`w-14 h-14 rounded border-2 p-1 bg-white flex items-center justify-center transition-colors ${i === activeImgIdx ? 'border-blue-950' : 'border-slate-200 hover:border-slate-400'
+                    }`}
                 >
                   <img src={resolveImg(img)} alt="" className="h-full w-full object-contain" onError={(e) => e.target.style.opacity = '0.3'} />
                 </button>
@@ -199,7 +198,7 @@ export default function ProductDetailPage({
 
         {/* ─── Right: Product Info + Order Form ───────── */}
         <div className="lg:col-span-7 space-y-6">
-          
+
           {/* Title & Meta */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -286,9 +285,8 @@ export default function ProductDetailPage({
                 <div>
                   <h3 className="text-base font-bold text-slate-900">Order Sent Successfully!</h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Your inquiry for <strong>{product.title}</strong> has been sent to our sales team at
-                    <br />
-                    <span className="text-blue-950 font-medium">{OWNER_EMAIL}</span> &amp; <span className="text-blue-950 font-medium">{SALES_EMAIL}</span>
+                    Your inquiry for <strong>{product.title}</strong> has been sent to our sales team
+
                   </p>
                   <p className="text-xs text-slate-400 mt-2">We'll get back to you within 24 hours.</p>
                 </div>
@@ -312,9 +310,7 @@ export default function ProductDetailPage({
               <>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">Place Order Inquiry</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Sends directly to <span className="text-blue-950 font-medium">{OWNER_EMAIL}</span> &amp; <span className="text-blue-950 font-medium">{SALES_EMAIL}</span>
-                  </p>
+
                 </div>
 
                 {sendError && (
@@ -410,13 +406,13 @@ export default function ProductDetailPage({
           <h2 className="text-lg font-bold text-slate-900 mb-4">Related Formulations</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {relatedProducts.map(rel => (
-              <div 
+              <div
                 key={rel.id}
                 onClick={() => { onSelectProduct(rel); setOrderSent(false); setActiveImgIdx(0); }}
                 className="bg-white p-3 rounded border border-slate-200 hover:border-slate-300 cursor-pointer transition-colors flex items-center gap-3"
               >
                 <div className="w-12 h-12 rounded bg-slate-50 p-1 flex items-center justify-center flex-shrink-0">
-                  <img src={resolveImg(rel.imagePath)} alt="" className="h-full object-contain" onError={(e) => e.target.style.opacity='0.2'} />
+                  <img src={resolveImg(rel.imagePath)} alt="" className="h-full object-contain" onError={(e) => e.target.style.opacity = '0.2'} />
                 </div>
                 <div className="min-w-0">
                   <h4 className="font-semibold text-xs text-slate-900 truncate">{rel.title}</h4>
