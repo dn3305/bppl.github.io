@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
 import { X, Mail, MessageCircle, Copy, Check, ShoppingCart } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { 
-  formatCurrency, 
-  OWNER_EMAIL, 
-  sendOrderViaMailto, 
-  sendOrderViaWhatsApp, 
-  generateOrderQuotationText 
+import {
+  formatCurrency,
+  OWNER_EMAIL,
+  sendOrderEmail,
+  sendOrderViaWhatsApp,
+  generateOrderQuotationText
 } from '../services/emailService';
 
-export default function OrderModal({ 
-  product, 
-  initialQuantity = 1, 
-  onClose 
+export default function OrderModal({
+  product,
+  initialQuantity = 1,
+  onClose
 }) {
   const [quantity, setQuantity] = useState(initialQuantity);
   const [copied, setCopied] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(null);
 
   const [customer, setCustomer] = useState({
     name: '',
@@ -44,27 +46,30 @@ export default function OrderModal({
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleSendEmail = (e) => {
+  const handleSendEmail = async (e) => {
     if (e) e.preventDefault();
     if (!customer.name || !customer.phone) {
       alert('Please provide your name and phone number.');
       return;
     }
 
-    sendOrderViaMailto({
-      product,
-      quantity,
-      customer,
-      calculatedTotal
-    });
+    setSending(true);
+    setSendError(null);
+    try {
+      await sendOrderEmail({ product, quantity, customer, calculatedTotal });
 
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 }
-    });
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.6 }
+      });
 
-    setOrderSent(true);
+      setOrderSent(true);
+    } catch (err) {
+      setSendError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleWhatsApp = () => {
@@ -142,8 +147,14 @@ export default function OrderModal({
         </div>
 
         {orderSent && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-950 text-xs rounded">
-            Your email client has opened with the formatted invoice addressing <strong>{OWNER_EMAIL}</strong>.
+          <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded">
+            Your order inquiry has been emailed to <strong>{OWNER_EMAIL}</strong>.
+          </div>
+        )}
+
+        {sendError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
+            {sendError} — please try again, or reach us directly.
           </div>
         )}
 
@@ -234,10 +245,11 @@ export default function OrderModal({
           <div className="pt-2 flex flex-col sm:flex-row gap-2">
             <button
               type="submit"
-              className="flex-1 py-2.5 px-4 bg-blue-950 hover:bg-blue-900 text-white font-semibold rounded transition-colors flex items-center justify-center gap-1.5"
+              disabled={sending}
+              className="flex-1 py-2.5 px-4 bg-blue-950 hover:bg-blue-900 text-white font-semibold rounded transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <Mail className="w-3.5 h-3.5" />
-              <span>Send Order to {OWNER_EMAIL}</span>
+              <span>{sending ? 'Sending...' : `Send Order to ${OWNER_EMAIL}`}</span>
             </button>
             <button
               type="button"

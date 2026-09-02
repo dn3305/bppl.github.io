@@ -51,19 +51,61 @@ Email: ${OWNER_EMAIL} | ${SALES_EMAIL}
 ========================================`;
 };
 
-// Open mailto: addressed to both emails
-export const sendOrderViaMailto = (orderData) => {
-  const { product, customer, quantity } = orderData;
-  const subject = encodeURIComponent(
-    `[BPPL Order] ${quantity} ${product.unit} of ${product.title} - ${customer.name || 'Customer'}`
-  );
-  const bodyText = encodeURIComponent(generateOrderQuotationText(orderData));
-  const to = encodeURIComponent(`${OWNER_EMAIL},${SALES_EMAIL}`);
-  const mailtoUrl = `mailto:${to}?subject=${subject}&body=${bodyText}`;
-  window.open(mailtoUrl, '_blank');
+export const generateContactMessageText = (formData) => {
+  return `BHARAT PETCHEM PVT. LTD. - INQUIRY
+
+Name: ${formData.name}
+Phone: ${formData.phone}
+Email: ${formData.email || 'N/A'}
+Inquiry Type: ${formData.subject}
+
+Message:
+${formData.message || 'No additional message.'}
+
+Sent from BPPL Web Portal`;
 };
 
-// Open WhatsApp
+// Sends the order inquiry through our own backend (Zoho SMTP) — actually
+// delivered server-side, not dependent on the visitor having a mail client.
+export const sendOrderEmail = async (orderData) => {
+  const { product, quantity, customer } = orderData;
+  const res = await fetch('/api/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'order',
+      subject: `[BPPL Order] ${quantity} ${product.unit} of ${product.title} - ${customer.name || 'Customer'}`,
+      text: generateOrderQuotationText(orderData),
+      replyTo: customer.email || undefined
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to send order (${res.status})`);
+  }
+  return res.json();
+};
+
+// Sends a contact-form inquiry through our own backend (Zoho SMTP).
+export const sendContactEmail = async (formData) => {
+  const res = await fetch('/api/send-email', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'contact',
+      subject: `[BPPL Web Inquiry] ${formData.subject} - ${formData.name}`,
+      text: generateContactMessageText(formData),
+      replyTo: formData.email || undefined
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Failed to send message (${res.status})`);
+  }
+  return res.json();
+};
+
+// Open WhatsApp (still client-side — no backend needed for this one)
 export const sendOrderViaWhatsApp = (orderData) => {
   const invoiceText = generateOrderQuotationText(orderData);
   const encodedText = encodeURIComponent(invoiceText);

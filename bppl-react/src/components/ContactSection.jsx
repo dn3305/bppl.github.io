@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, MessageCircle, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { OWNER_EMAIL, OWNER_PHONE, OWNER_PHONE_RAW, OFFICE_PHONE } from '../services/emailService';
+import { OWNER_EMAIL, OWNER_PHONE, OWNER_PHONE_RAW, OFFICE_PHONE, sendContactEmail } from '../services/emailService';
 
 export default function ContactSection() {
   const [formData, setFormData] = useState({
@@ -12,36 +12,33 @@ export default function ContactSection() {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name || !formData.phone) {
       alert('Please provide your name and phone number.');
       return;
     }
 
-    const subject = encodeURIComponent(`[BPPL Web Inquiry] ${formData.subject} - ${formData.name}`);
-    const body = encodeURIComponent(`BHARAT PETCHEM PVT. LTD. - INQUIRY
+    setSending(true);
+    setSendError(null);
+    try {
+      await sendContactEmail(formData);
 
-Name: ${formData.name}
-Phone: ${formData.phone}
-Email: ${formData.email || 'N/A'}
-Inquiry Type: ${formData.subject}
+      confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 }
+      });
 
-Message:
-${formData.message || 'No additional message.'}
-
-Sent from BPPL Web Portal`);
-
-    window.open(`mailto:${OWNER_EMAIL}?subject=${subject}&body=${body}`, '_blank');
-
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.7 }
-    });
-
-    setSubmitted(true);
+      setSubmitted(true);
+    } catch (err) {
+      setSendError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleWhatsApp = () => {
@@ -52,7 +49,7 @@ Sent from BPPL Web Portal`);
   return (
     <section id="contact" className="py-16 sm:py-20 bg-slate-50 border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Section Header */}
         <div className="max-w-3xl mb-12">
           <span className="text-xs font-bold text-blue-950 uppercase tracking-wider block mb-1">
@@ -67,10 +64,10 @@ Sent from BPPL Web Portal`);
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          
+
           {/* Left Column: Contact Cards (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
-            
+
             <div className="p-5 rounded-lg bg-white border border-slate-200 space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold text-blue-950 uppercase">
                 <MapPin className="w-4 h-4 text-blue-950" />
@@ -141,9 +138,15 @@ Sent from BPPL Web Portal`);
             </p>
 
             {submitted && (
-              <div className="mb-5 p-3 bg-blue-50 border border-blue-200 text-blue-950 text-xs rounded flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-950 flex-shrink-0" />
-                <span>Your email application has opened with the inquiry details.</span>
+              <div className="mb-5 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                <span>Your inquiry has been emailed to us. We'll get back to you shortly.</span>
+              </div>
+            )}
+
+            {sendError && (
+              <div className="mb-5 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
+                {sendError} — please try again, or reach us directly.
               </div>
             )}
 
@@ -213,10 +216,11 @@ Sent from BPPL Web Portal`);
               <div className="pt-1 flex flex-col sm:flex-row gap-3">
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 px-5 bg-blue-950 hover:bg-blue-900 text-white font-semibold rounded text-xs transition-colors flex items-center justify-center gap-2"
+                  disabled={sending}
+                  className="flex-1 py-2.5 px-5 bg-blue-950 hover:bg-blue-900 text-white font-semibold rounded text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Send Email to {OWNER_EMAIL}</span>
+                  <span>{sending ? 'Sending...' : 'Send Email'}</span>
                 </button>
 
                 <button

@@ -13,23 +13,25 @@ import {
   Award
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { 
-  formatCurrency, 
+import {
+  formatCurrency,
   OWNER_EMAIL,
   SALES_EMAIL,
-  OWNER_PHONE, 
-  sendOrderViaMailto, 
+  OWNER_PHONE,
+  sendOrderEmail,
   sendOrderViaWhatsApp
 } from '../services/emailService';
 
-export default function ProductDetailPage({ 
-  product, 
-  allProducts = [], 
-  onBack, 
-  onSelectProduct 
+export default function ProductDetailPage({
+  product,
+  allProducts = [],
+  onBack,
+  onSelectProduct
 }) {
   const [quantity, setQuantity] = useState(1);
   const [orderSent, setOrderSent] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState(null);
   // Multi-image gallery
   const [activeImgIdx, setActiveImgIdx] = useState(0);
 
@@ -58,17 +60,24 @@ export default function ProductDetailPage({
 
   const calculatedTotal = (product.unitPrice || 0) * quantity;
 
-  const handleSendOrder = (e) => {
+  const handleSendOrder = async (e) => {
     if (e) e.preventDefault();
     if (!customer.name || !customer.phone) {
       alert('Please provide your Name and Phone Number to submit the order inquiry.');
       return;
     }
 
-    sendOrderViaMailto({ product, quantity, customer, calculatedTotal });
-
-    confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-    setOrderSent(true);
+    setSending(true);
+    setSendError(null);
+    try {
+      await sendOrderEmail({ product, quantity, customer, calculatedTotal });
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+      setOrderSent(true);
+    } catch (err) {
+      setSendError(err.message);
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleWhatsAppOrder = () => {
@@ -308,6 +317,12 @@ export default function ProductDetailPage({
                   </p>
                 </div>
 
+                {sendError && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded">
+                    {sendError} — please try again, or reach us directly.
+                  </div>
+                )}
+
                 <form onSubmit={handleSendOrder} className="space-y-3 text-xs">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -366,10 +381,11 @@ export default function ProductDetailPage({
                   <div className="pt-1 flex flex-col sm:flex-row gap-3">
                     <button
                       type="submit"
-                      className="flex-1 py-3 px-4 bg-blue-950 hover:bg-blue-900 text-white font-semibold text-xs rounded transition-colors flex items-center justify-center gap-2"
+                      disabled={sending}
+                      className="flex-1 py-3 px-4 bg-blue-950 hover:bg-blue-900 text-white font-semibold text-xs rounded transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
                       <Mail className="w-4 h-4" />
-                      <span>Send Order</span>
+                      <span>{sending ? 'Sending...' : 'Send Order'}</span>
                     </button>
 
                     <button
